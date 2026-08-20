@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#050708">
+<link rel="manifest" href="manifest.json">
+<title>DRUM // VOICE</title>
+<style>
+:root{--g:#b7ffcf;--g2:#67d995;--bg:#050708;--panel:#0b1010;--line:#26352d;--muted:#718078}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:#020303;color:var(--g);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+body{min-height:100vh}
+.app{min-height:100vh;max-width:520px;margin:auto;background:radial-gradient(circle at 50% 0,#122018 0,#050708 38%,#020303 100%);padding:calc(env(safe-area-inset-top) + 18px) 18px calc(env(safe-area-inset-bottom) + 24px)}
+.top{display:flex;justify-content:space-between;align-items:center;font-size:11px;letter-spacing:2px;border-bottom:1px solid var(--line);padding-bottom:13px}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--g2);box-shadow:0 0 10px var(--g2);margin-right:7px}
+h1{font-size:22px;letter-spacing:4px;margin:26px 0 4px}
+.sub{font-size:10px;color:var(--muted);letter-spacing:2px}
+.panel{margin-top:22px;border:1px solid var(--line);background:rgba(7,12,10,.82);box-shadow:0 0 30px #000 inset;padding:15px}
+.label{font-size:10px;color:#718078;letter-spacing:2px;margin-bottom:9px}
+textarea{display:block;width:100%;height:180px;resize:none;border:1px solid #31463a;background:#050807;color:#d7ffe3;border-radius:2px;padding:14px;font:16px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;outline:none}
+textarea:focus{border-color:var(--g2);box-shadow:0 0 12px #67d99522}
+button{font:inherit;border:1px solid var(--line);background:#0a110e;color:var(--g);padding:14px 12px;border-radius:2px;letter-spacing:2px}
+button:active{transform:scale(.98);background:#122019}
+.primary{background:#b7ffcf;color:#061009;border-color:#b7ffcf;font-weight:800}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+select,input{accent-color:var(--g2)}
+select{width:100%;padding:12px;background:#050807;color:var(--g);border:1px solid var(--line);border-radius:2px;font:12px monospace}
+.control{margin-top:16px}
+.range{display:grid;grid-template-columns:1fr 50px;gap:10px;align-items:center}
+.val{text-align:right;font-size:11px}
+input[type=range]{width:100%}
+.status{margin-top:16px;border-top:1px dashed #26352d;padding-top:12px;font-size:11px;min-height:20px;color:#8fa99a}
+.boot{position:fixed;inset:0;background:#020303;display:flex;align-items:center;justify-content:center;z-index:5;transition:opacity .4s}
+.boot.hide{opacity:0;pointer-events:none}
+.bootbox{text-align:center;letter-spacing:3px;font-size:12px}
+.loader{width:190px;height:2px;background:#18221d;margin:15px auto;overflow:hidden}
+.loader i{display:block;height:100%;width:45%;background:var(--g);animation:load 1s infinite}
+@keyframes load{to{transform:translateX(420%)}}
+.footer{margin-top:24px;font-size:9px;color:#4f5e56;line-height:1.7;text-align:center}
+</style>
+</head>
+<body>
+<div class="boot" id="boot"><div class="bootbox">DRUM // VOICE<div class="loader"><i></i></div>VOICE SYSTEM INITIALIZING</div></div>
+<main class="app">
+<div class="top"><span><i class="dot"></i>SYSTEM ONLINE</span><span id="clock">00:00:00</span></div>
+<h1>DRUM // VOICE</h1>
+<div class="sub">TACTICAL TEXT-TO-SPEECH TERMINAL</div>
+
+<section class="panel">
+<div class="label">MESSAGE INPUT / 入力</div>
+<textarea id="text">こんにちは。ドラムです。</textarea>
+<div class="actions">
+<button class="primary" id="speak">▶ SPEAK</button>
+<button id="stop">■ STOP</button>
+</div>
+<div class="status" id="status">READY // 音声システム待機中</div>
+</section>
+
+<section class="panel">
+<div class="label">VOICE CONFIGURATION</div>
+<div class="control"><div class="label">VOICE / 音声</div><select id="voice"></select></div>
+<div class="control"><div class="label">RATE / 速度</div><div class="range"><input id="rate" type="range" min=".65" max="1.25" step=".01" value=".88"><div class="val" id="rv">0.88</div></div></div>
+<div class="control"><div class="label">PITCH / 声の高さ</div><div class="range"><input id="pitch" type="range" min=".7" max="1.35" step=".01" value="1.02"><div class="val" id="pv">1.02</div></div></div>
+</section>
+
+<div class="footer">FICTIONAL INTERFACE / NOT AN OFFICIAL VIVANT APPLICATION<br>端末標準の日本語音声を使用</div>
+</main>
+<script>
+const synth=speechSynthesis, $=id=>document.getElementById(id);
+let voices=[];
+function load(){
+ voices=synth.getVoices().filter(v=>/^ja/i.test(v.lang)||/日本語|Japanese/i.test(v.name));
+ $('voice').innerHTML='';
+ (voices.length?voices:[{name:'端末標準 日本語音声',lang:'ja-JP'}]).forEach((v,i)=>{
+  let o=document.createElement('option');o.value=i;o.textContent=`${v.name}  [${v.lang}]`;$('voice').appendChild(o)
+ });
+}
+load(); if('onvoiceschanged' in synth)synth.onvoiceschanged=load;
+$('speak').onclick=()=>{
+ let t=$('text').value.trim();if(!t){$('status').textContent='ERROR // 文章を入力してください';return}
+ synth.cancel();let u=new SpeechSynthesisUtterance(t);u.lang='ja-JP';u.rate=+$('rate').value;u.pitch=+$('pitch').value;
+ let v=voices[+$('voice').value];if(v)u.voice=v;
+ u.onstart=()=>$('status').textContent='TRANSMITTING // 読み上げ中';
+ u.onend=()=>$('status').textContent='COMPLETE // 送信完了';
+ u.onerror=()=>$('status').textContent='ERROR // 音声再生失敗';
+ synth.speak(u)
+};
+$('stop').onclick=()=>{synth.cancel();$('status').textContent='ABORTED // 停止'};
+$('rate').oninput=()=>$('rv').textContent=(+$('rate').value).toFixed(2);
+$('pitch').oninput=()=>$('pv').textContent=(+$('pitch').value).toFixed(2);
+setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString('ja-JP',{hour12:false})},500);
+setTimeout(()=>$('boot').classList.add('hide'),900);
+</script>
+</body>
+</html>

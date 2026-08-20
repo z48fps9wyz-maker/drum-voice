@@ -1,0 +1,9 @@
+{
+  "name": "DRUM // VOICE",
+  "short_name": "DRUM VOICE",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#020303",
+  "theme_color": "#050708",
+  "icons": []
+}
